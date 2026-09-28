@@ -1,0 +1,19 @@
+[project]
+name = "jobs"
+version = "0.1.0"
+description = "Background work in lanes, with leases, fair shares, batches and cancellation, stored in SQL or in memory"
+requires-python = ">=3.10"
+dependencies = ["sqlalchemy>=2.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "black>=24"]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

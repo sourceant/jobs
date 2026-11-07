@@ -14,7 +14,7 @@ def test_a_sweep_asks_for_the_next_one_so_nothing_has_to_schedule_it():
     assert sweeper.run().succeeded is True
 
     waiting = store.pending(BACKGROUND)
-    assert [job.kind for job in waiting] == [SWEEP_KIND]
+    assert [job.type for job in waiting] == [SWEEP_KIND]
     assert waiting[0].dedupe_slot == SWEEP_SLOT
 
 

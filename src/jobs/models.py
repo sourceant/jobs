@@ -46,10 +46,10 @@ class JobRequest:
     """
 
     lane: str
-    kind: str
+    type: str
     payload: Mapping[str, Any] = field(default_factory=dict)
     tenant: str = ""
-    tenant_kind: str = BY_NOBODY
+    tenant_type: str = BY_NOBODY
     scope_id: Optional[int] = None
     priority: int = 0
     delay_seconds: int = 0
@@ -63,7 +63,7 @@ class JobRequest:
     dedupe_slot: Optional[str] = None
     batch_id: Optional[int] = None
 
-    def for_(self, tenant: Optional[str], kind: str = BY_WORKSPACE) -> "JobRequest":
+    def for_(self, tenant: Optional[str], type: str = BY_WORKSPACE) -> "JobRequest":
         """The same request, attributed to whoever it is for.
 
         A tenant that cannot be worked out is not an error. It means this job
@@ -73,8 +73,8 @@ class JobRequest:
         from dataclasses import replace
 
         if not tenant:
-            return replace(self, tenant="", tenant_kind=BY_NOBODY)
-        return replace(self, tenant=str(tenant), tenant_kind=kind)
+            return replace(self, tenant="", tenant_type=BY_NOBODY)
+        return replace(self, tenant=str(tenant), tenant_type=type)
 
 
 @dataclass(frozen=True)
@@ -83,11 +83,11 @@ class Job:
 
     id: int
     lane: str
-    kind: str
+    type: str
     payload: Mapping[str, Any]
     state: str
     tenant: str = ""
-    tenant_kind: str = BY_NOBODY
+    tenant_type: str = BY_NOBODY
     scope_id: Optional[int] = None
     priority: int = 0
     attempt: int = 0

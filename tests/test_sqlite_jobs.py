@@ -17,8 +17,8 @@ def _mysql_bytes(columns) -> int:
     """What MySQL counts these columns as, reserving four bytes a character."""
     total = 0
     for column in columns:
-        kind = column.type.dialect_impl(mysql.dialect())
-        total += (kind.length * 4) if getattr(kind, "length", None) else 8
+        type = column.type.dialect_impl(mysql.dialect())
+        total += (type.length * 4) if getattr(type, "length", None) else 8
     return total
 
 

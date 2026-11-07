@@ -29,7 +29,7 @@ EVERY_SECONDS = 3600
 class Sweeper:
     """Clears away what the queue has finished with."""
 
-    kind = SWEEP_KIND
+    type = SWEEP_KIND
 
     def __init__(
         self,
@@ -74,7 +74,7 @@ class Sweeper:
             return store.enqueue(
                 JobRequest(
                     lane=BACKGROUND,
-                    kind=SWEEP_KIND,
+                    type=SWEEP_KIND,
                     dedupe_slot=SWEEP_SLOT,
                     delay_seconds=self._every,
                     deadline_seconds=300,

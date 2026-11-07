@@ -142,12 +142,12 @@ class Worker:
             if held is not None:
                 return held
 
-        handler = self._handler(job.kind)
+        handler = self._handler(job.type)
         if handler is None:
             # A handler installed on one deployment may be absent on another,
             # so this is a fact about this machine and not about the job.
-            logger.error(f"Nothing here handles {job.kind}, so job {job.id} cannot run")
-            return JobOutcome.failed(f"no handler for {job.kind}")
+            logger.error(f"Nothing here handles {job.type}, so job {job.id} cannot run")
+            return JobOutcome.failed(f"no handler for {job.type}")
 
         outcome = self._run(handler, job, lease, beating)
         for layer in reversed(wrapping):
@@ -166,7 +166,7 @@ class Worker:
             try:
                 answer.append(handler.run(job))
             except Exception as error:
-                logger.warning(f"Job {job.id} ({job.kind}) failed", exc_info=True)
+                logger.warning(f"Job {job.id} ({job.type}) failed", exc_info=True)
                 answer.append(JobOutcome.failed(f"{type(error).__name__}: {error}"))
 
         doing = threading.Thread(target=perform, name=f"job-{job.id}", daemon=True)
@@ -186,9 +186,9 @@ class Worker:
         said = answer[0]
         if not isinstance(said, JobOutcome):
             logger.error(
-                f"{job.kind} answered with {type(said).__name__}, not an outcome"
+                f"{job.type} answered with {type(said).__name__}, not an outcome"
             )
-            return JobOutcome.failed(f"{job.kind} did not say how it went")
+            return JobOutcome.failed(f"{job.type} did not say how it went")
         return said
 
     def _overran(self, job: Job, lease: Lease, beating: "_Heartbeat") -> JobOutcome:
@@ -199,7 +199,7 @@ class Worker:
         the process goes and takes it with it.
         """
         logger.error(
-            f"Job {job.id} ({job.kind}) passed {job.deadline_seconds}s; "
+            f"Job {job.id} ({job.type}) passed {job.deadline_seconds}s; "
             f"{self._name} is stopping so it cannot carry on"
         )
         beating.stop()
@@ -220,16 +220,16 @@ class Worker:
         the only way two of them do not write over each other.
         """
         logger.error(
-            f"The claim on job {job.id} ({job.kind}) went to another worker; "
+            f"The claim on job {job.id} ({job.type}) went to another worker; "
             f"{self._name} is stopping so this copy cannot carry on"
         )
         beating.stop()
         self._halt(LOST_EXIT)
         return JobOutcome.failed("the claim on this job was taken")
 
-    def _handler(self, kind: str) -> Optional[JobHandler]:
+    def _handler(self, type: str) -> Optional[JobHandler]:
         for handler in self._services.contributions(JobHandler):
-            if getattr(handler, "kind", None) == kind:
+            if getattr(handler, "type", None) == type:
                 return handler
         return None
 

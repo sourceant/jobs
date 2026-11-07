@@ -28,7 +28,7 @@ WORKER = textwrap.dedent("""
     from jobs.models import INTERACTIVE, JobOutcome
 
     class Forever:
-        kind = "test.long"
+        type = "test.long"
         def run(self, job):
             while True:
                 time.sleep(0.05)
@@ -47,7 +47,7 @@ def test_a_job_survives_the_worker_being_killed_outright(tmp_path):
     job_id = store.enqueue(
         JobRequest(
             lane=INTERACTIVE,
-            kind="test.long",
+            type="test.long",
             tenant="acme",
             max_attempts=3,
             deadline_seconds=600,

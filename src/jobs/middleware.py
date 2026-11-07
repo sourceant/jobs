@@ -6,7 +6,7 @@ straight back, so the store does it. What is here is everything that can only
 be decided once a job is about to run.
 
 A plugin contributes its own the same way it contributes a handler, so a
-concern that matters to one kind of work does not become a column everybody
+concern that matters to one type of work does not become a column everybody
 else carries.
 """
 
@@ -47,7 +47,7 @@ class Throttled:
         self._paused_until: dict[str, float] = {}
 
     def _key(self, job: Job) -> str:
-        return job.tenant or job.kind
+        return job.tenant or job.type
 
     def before(self, job: Job) -> Optional[JobOutcome]:
         with self._lock:
@@ -55,7 +55,7 @@ class Throttled:
             waiting = until - monotonic()
         if waiting <= 0:
             return None
-        logger.info(f"Holding {job.kind} for {int(waiting)}s after repeated refusals")
+        logger.info(f"Holding {job.type} for {int(waiting)}s after repeated refusals")
         return JobOutcome.failed(
             "held back after repeated refusals", retry=True, retry_in=int(waiting) + 1
         )
@@ -91,7 +91,7 @@ class RateLimited:
         self._seen: dict[str, list[float]] = {}
 
     def before(self, job: Job) -> Optional[JobOutcome]:
-        key = job.tenant or job.kind
+        key = job.tenant or job.type
         now = monotonic()
         with self._lock:
             recent = [at for at in self._seen.get(key, []) if now - at < self._window]

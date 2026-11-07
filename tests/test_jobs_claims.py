@@ -42,7 +42,7 @@ def abandon(store: SQLJobStore, job_id: int) -> None:
 def test_work_asked_for_once_is_not_offered_again_after_a_worker_dies(tmp_path):
     store = store_at(tmp_path)
     job_id = store.enqueue(
-        JobRequest(lane=INTERACTIVE, kind="test.once", max_attempts=1)
+        JobRequest(lane=INTERACTIVE, type="test.once", max_attempts=1)
     )
 
     assert [lease.job.id for lease in store.claim(INTERACTIVE, "first", 1)] == [job_id]
@@ -55,7 +55,7 @@ def test_work_asked_for_once_is_not_offered_again_after_a_worker_dies(tmp_path):
 def test_work_asked_for_twice_is_offered_again_after_a_worker_dies(tmp_path):
     store = store_at(tmp_path)
     job_id = store.enqueue(
-        JobRequest(lane=INTERACTIVE, kind="test.twice", max_attempts=2)
+        JobRequest(lane=INTERACTIVE, type="test.twice", max_attempts=2)
     )
 
     store.claim(INTERACTIVE, "first", 1)
@@ -68,7 +68,7 @@ def test_work_asked_for_twice_is_offered_again_after_a_worker_dies(tmp_path):
 def test_work_nobody_may_take_again_stops_saying_it_is_running(tmp_path):
     store = store_at(tmp_path)
     job_id = store.enqueue(
-        JobRequest(lane=INTERACTIVE, kind="test.once", max_attempts=1)
+        JobRequest(lane=INTERACTIVE, type="test.once", max_attempts=1)
     )
     store.claim(INTERACTIVE, "first", 1)
     abandon(store, job_id)
@@ -82,10 +82,10 @@ def test_a_backlog_for_one_tenant_does_not_hide_another_tenants_work(tmp_path):
     store = store_at(tmp_path, cap=1, worker_window=5)
     for _ in range(6):
         store.enqueue(
-            JobRequest(lane=INTERACTIVE, kind="test.many").for_("busy-tenant")
+            JobRequest(lane=INTERACTIVE, type="test.many").for_("busy-tenant")
         )
     waiting = store.enqueue(
-        JobRequest(lane=INTERACTIVE, kind="test.one").for_("quiet-tenant")
+        JobRequest(lane=INTERACTIVE, type="test.one").for_("quiet-tenant")
     )
 
     store.claim(INTERACTIVE, "first", 1)
@@ -98,7 +98,7 @@ def test_two_tenants_take_turns_rather_than_one_going_twice(tmp_path):
     store = store_at(tmp_path, cap=1)
     for tenant in ("a", "b"):
         for _ in range(2):
-            store.enqueue(JobRequest(lane=INTERACTIVE, kind="test.turns").for_(tenant))
+            store.enqueue(JobRequest(lane=INTERACTIVE, type="test.turns").for_(tenant))
 
     served = []
     for _ in range(3):
@@ -127,12 +127,12 @@ def test_a_tidy_asks_for_the_next_one_while_it_is_still_running(tmp_path):
 
 def test_a_worker_whose_claim_is_taken_stops_rather_than_carrying_on(tmp_path):
     store = store_at(tmp_path, lease_seconds=1)
-    store.enqueue(JobRequest(lane=INTERACTIVE, kind="test.slow", max_attempts=2))
+    store.enqueue(JobRequest(lane=INTERACTIVE, type="test.slow", max_attempts=2))
 
     running = threading.Event()
 
     class Slow:
-        kind = "test.slow"
+        type = "test.slow"
 
         def run(self, job):
             running.set()

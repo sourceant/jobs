@@ -39,13 +39,13 @@ class JobStore(Protocol):
 
 @runtime_checkable
 class JobHandler(Protocol):
-    """Something that does one kind of work.
+    """Something that does one type of work.
 
-    `kind` is matched against the job's own, so a plugin contributes handlers
+    `type` is matched against the job's own, so a plugin contributes handlers
     without the core knowing what they are for.
     """
 
-    kind: str
+    type: str
 
     def run(self, job: Job) -> JobOutcome: ...
 
@@ -101,7 +101,7 @@ class JobAdmin(Protocol):
     def pending(self, lane: str = "", limit: int = 100) -> Sequence[Job]: ...
 
     def recent(
-        self, lane: str = "", kinds: Sequence[str] = (), limit: int = 100
+        self, lane: str = "", types: Sequence[str] = (), limit: int = 100
     ) -> Sequence[Job]: ...
 
     def cancel(self, job_id: int) -> bool: ...

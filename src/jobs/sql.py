@@ -34,8 +34,10 @@ from sqlalchemy import (
     and_,
     delete,
     func,
+    inspect,
     or_,
     select,
+    text,
     update,
 )
 from sqlalchemy.exc import IntegrityError
@@ -76,9 +78,9 @@ job_table = Table(
         autoincrement=True,
     ),
     Column("lane", String(64), nullable=False),
-    Column("kind", String(255), nullable=False),
+    Column("type", String(255), nullable=False),
     Column("tenant", String(255), nullable=False, default=""),
-    Column("tenant_kind", String(32), nullable=False, default=""),
+    Column("tenant_type", String(32), nullable=False, default=""),
     Column("scope_id", BigInteger, nullable=True),
     Column("payload", Text, nullable=False),
     Column("state", String(16), nullable=False),
@@ -165,6 +167,21 @@ def _offerable(now: datetime):
     )
 
 
+# A store written before these columns were named `type` and `tenant_type` calls them `kind` and
+# `tenant_kind`. A table that already exists is never touched by create_all, so it is renamed here instead:
+# the queue holds work in progress, and dropping it would lose whatever was still queued.
+_RENAMED = (("kind", "type"), ("tenant_kind", "tenant_type"))
+
+
+def _rename_legacy_columns(engine: Engine) -> None:
+    for table in (job_table, job_lock_table, job_batch_table):
+        with engine.begin() as connection:
+            found = {c["name"] for c in inspect(engine).get_columns(table.name)}
+            for before, after in _RENAMED:
+                if before in found and after not in found:
+                    connection.execute(text(f'ALTER TABLE {table.name} RENAME COLUMN {before} TO {after}'))
+
+
 class SQLJobStore:
     """Jobs kept in a database, claimed by compare and swap."""
 
@@ -187,6 +204,7 @@ class SQLJobStore:
         self._window = worker_window
         if create_schema:
             metadata.create_all(engine)
+            _rename_legacy_columns(engine)
 
     def _clock(self, connection) -> datetime:
         """Now, according to the database rather than this machine.
@@ -222,9 +240,9 @@ class SQLJobStore:
         slot = request.dedupe_slot
         values = {
             "lane": request.lane,
-            "kind": request.kind,
+            "type": request.type,
             "tenant": request.tenant,
-            "tenant_kind": request.tenant_kind,
+            "tenant_type": request.tenant_type,
             "scope_id": request.scope_id,
             "payload": json.dumps(dict(request.payload)),
             "state": QUEUED,
@@ -665,7 +683,7 @@ class SQLJobStore:
             return [_as_job(row) for row in connection.execute(query).all()]
 
     def recent(
-        self, lane: str = "", kinds: Sequence[str] = (), limit: int = 100
+        self, lane: str = "", types: Sequence[str] = (), limit: int = 100
     ) -> Sequence[Job]:
         """The queue as an activity feed: what is waiting, going and gone.
 
@@ -677,8 +695,8 @@ class SQLJobStore:
         query = select(job_table)
         if lane:
             query = query.where(job_table.c.lane == lane)
-        if kinds:
-            query = query.where(job_table.c.kind.in_(list(kinds)))
+        if types:
+            query = query.where(job_table.c.type.in_(list(types)))
         moved = func.coalesce(
             job_table.c.finished_at, job_table.c.started_at, job_table.c.created_at
         )
@@ -774,11 +792,11 @@ def _as_job(row) -> Job:
     return Job(
         id=row.id,
         lane=row.lane,
-        kind=row.kind,
+        type=row.type,
         payload=payload,
         state=row.state,
         tenant=row.tenant,
-        tenant_kind=row.tenant_kind,
+        tenant_type=row.tenant_type,
         scope_id=row.scope_id,
         priority=row.priority,
         attempt=row.attempt,

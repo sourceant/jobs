@@ -76,11 +76,11 @@ class InMemoryJobStore:
             self._jobs[job_id] = {
                 "id": job_id,
                 "lane": request.lane,
-                "kind": request.kind,
+                "type": request.type,
                 "payload": dict(request.payload),
                 "state": QUEUED,
                 "tenant": request.tenant,
-                "tenant_kind": request.tenant_kind,
+                "tenant_type": request.tenant_type,
                 "scope_id": request.scope_id,
                 "priority": request.priority,
                 "attempt": 0,
@@ -291,7 +291,7 @@ class InMemoryJobStore:
             return [self._read(row) for row in rows[:limit]]
 
     def recent(
-        self, lane: str = "", kinds: Sequence[str] = (), limit: int = 100
+        self, lane: str = "", types: Sequence[str] = (), limit: int = 100
     ) -> Sequence[Job]:
         """The queue as an activity feed: what is waiting, going and gone."""
         with self._lock:
@@ -299,7 +299,7 @@ class InMemoryJobStore:
                 row
                 for row in self._jobs.values()
                 if (not lane or row["lane"] == lane)
-                and (not kinds or row["kind"] in kinds)
+                and (not types or row["type"] in types)
             ]
 
             def moved(row):
@@ -389,11 +389,11 @@ class InMemoryJobStore:
         return Job(
             id=row["id"],
             lane=row["lane"],
-            kind=row["kind"],
+            type=row["type"],
             payload=dict(row["payload"]),
             state=row["state"],
             tenant=row["tenant"],
-            tenant_kind=row["tenant_kind"],
+            tenant_type=row["tenant_type"],
             scope_id=row["scope_id"],
             priority=row["priority"],
             attempt=row["attempt"],

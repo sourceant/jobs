@@ -10,8 +10,8 @@ from jobs import Contributions
 
 
 class Handler:
-    def __init__(self, kind="test.work", answer=None, raises=None, blocks=None):
-        self.kind = kind
+    def __init__(self, type="test.work", answer=None, raises=None, blocks=None):
+        self.type = type
         self._answer = answer or JobOutcome.ok()
         self._raises = raises
         self._blocks = blocks
@@ -41,7 +41,7 @@ def _worker(store, services, **over):
 
 
 def _asked(**over):
-    asked = {"lane": INTERACTIVE, "kind": "test.work", "tenant": "acme"}
+    asked = {"lane": INTERACTIVE, "type": "test.work", "tenant": "acme"}
     asked.update(over)
     return JobRequest(**asked)
 
@@ -73,7 +73,7 @@ def test_a_handler_that_raises_is_recorded_rather_than_lost(store, services):
 def test_work_nothing_here_handles_says_so(store, services):
     """A plugin may be installed on one deployment and not another, so this is
     a fact about this machine rather than about the job."""
-    job_id = store.enqueue(_asked(kind="somebody.elses.work"))
+    job_id = store.enqueue(_asked(type="somebody.elses.work"))
 
     _worker(store, services).work(max_jobs=1)
 
@@ -134,7 +134,7 @@ def test_a_handler_that_answers_with_something_else_is_a_failure(store, services
     thing, must not take the worker down on the way to recording it."""
 
     class Confused:
-        kind = "test.work"
+        type = "test.work"
 
         def run(self, job):
             return "done!"

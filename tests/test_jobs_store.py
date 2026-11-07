@@ -65,7 +65,7 @@ def store(request, clock, tmp_path):
 
 
 def _asked(**over) -> JobRequest:
-    asked = {"lane": INTERACTIVE, "kind": "test.work", "tenant": "acme"}
+    asked = {"lane": INTERACTIVE, "type": "test.work", "tenant": "acme"}
     asked.update(over)
     return JobRequest(**asked)
 

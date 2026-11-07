@@ -12,7 +12,7 @@ def test_the_store_makes_its_tables_when_asked_to(tmp_path):
     store = SQLJobStore(engine, create_schema=True)
 
     assert sa.inspect(engine).has_table("jobs")
-    assert store.enqueue(JobRequest(lane=INTERACTIVE, kind="test.work"))
+    assert store.enqueue(JobRequest(lane=INTERACTIVE, type="test.work"))
 
 
 def test_the_store_leaves_its_tables_to_migrations_by_default(tmp_path):

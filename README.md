@@ -12,12 +12,14 @@ Background work in lanes, stored in SQL (Postgres, MySQL or SQLite) or in memory
 from jobs import Contributions, JobHandler, JobOutcome, JobRequest, SQLJobStore, Worker, INTERACTIVE
 
 store = SQLJobStore(engine, create_schema=True)
-store.enqueue(JobRequest(lane=INTERACTIVE, kind="film.step", payload={"film": "acme"}))
+store.enqueue(JobRequest(lane=INTERACTIVE, type="film.step", payload={"film": "acme"}))
 
 registry = Contributions()
 registry.contribute(JobHandler, MyHandler())
 Worker(store, INTERACTIVE, services=registry).work()
 ```
+
+Pass a SQLAlchemy session or connection as `session=` to enqueue within an existing transaction. The job becomes visible when that transaction commits and disappears if it rolls back.
 
 ```bash
 virtualenv .venv && .venv/bin/pip install -e '.[dev]'

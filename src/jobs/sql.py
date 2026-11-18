@@ -179,7 +179,11 @@ def _rename_legacy_columns(engine: Engine) -> None:
             found = {c["name"] for c in inspect(engine).get_columns(table.name)}
             for before, after in _RENAMED:
                 if before in found and after not in found:
-                    connection.execute(text(f'ALTER TABLE {table.name} RENAME COLUMN {before} TO {after}'))
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE {table.name} RENAME COLUMN {before} TO {after}"
+                        )
+                    )
 
 
 class SQLJobStore:
@@ -229,7 +233,9 @@ class SQLJobStore:
         """
         if session is not None:
             connection = (
-                session.connection() if hasattr(session, "connection") else session
+                session.connection()
+                if callable(getattr(session, "connection", None))
+                else session
             )
             return self._insert(connection, request)
         with self._engine.begin() as connection:
